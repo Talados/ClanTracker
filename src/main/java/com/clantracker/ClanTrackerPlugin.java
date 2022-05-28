@@ -6,6 +6,7 @@ import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.events.ChatMessage;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -14,6 +15,7 @@ import net.runelite.client.task.Schedule;
 
 
 import java.io.IOException;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +30,10 @@ public class ClanTrackerPlugin extends Plugin
 {
 	@Inject
 	private Client client;
+
+	// ClientThread for async methods
+	@Inject
+	private ClientThread clientThread;
 
 	// Injects our config
 	@Inject
@@ -116,13 +122,16 @@ public class ClanTrackerPlugin extends Plugin
 	@Subscribe
 	private void onChatMessage(ChatMessage chatMessage)
 	{
-
-		String author = chatMessage.getName().replace((char)160, ' ').replaceAll("<img=\\d>", "");
-		String content = sanitizeMessage(chatMessage.getMessage());
+		String author;
+		String content;
 		String clanName = "";
+
 		switch (chatMessage.getType()) {
 			case CLAN_CHAT:
-				clanName = chatMessage.getSender().replace((char)160, ' ');
+				author = chatMessage.getName().replace((char)160, ' ').replaceAll("<img=\\d>", "");
+				content = sanitizeMessage(chatMessage.getMessage());
+				clanName = client.getClanChannel().getName().replace((char)160, ' ');
+
 				try {
 					setSequenceNumber(apiClient.message(clanName, config.pluginPassword(), sequenceNumber, 0, author, content, 0, 3));
 				} catch (IOException e) {
@@ -131,7 +140,10 @@ public class ClanTrackerPlugin extends Plugin
 				log.info(String.format("[%s] %s", author, content));
 				break;
 			case CLAN_MESSAGE:
-				clanName = chatMessage.getSender().replace((char)160, ' ');
+				author = chatMessage.getName().replace((char)160, ' ').replaceAll("<img=\\d>", "");
+				content = sanitizeMessage(chatMessage.getMessage());
+				clanName = client.getClanChannel().getName().replace((char)160, ' ');
+
 				SystemMessageType messageType = getSystemMessageType(content);
 				log.info(String.format("[SYSTEM] %s", content));
 				try {
@@ -158,6 +170,29 @@ public class ClanTrackerPlugin extends Plugin
 			}
 		}
 		return onlineClanMembers;
+	}
+	@Schedule(
+			period = 10,
+			unit = ChronoUnit.SECONDS,
+			asynchronous = true
+	)
+	public void onlineCountScheduleWrapper()
+	{
+		clientThread.invoke(this::sendClanOnlineCount);
+	}
+
+	public void sendClanOnlineCount()
+	{
+		log.info("Scheduler fired");
+		String clanName = client.getClanChannel().getName();
+		if (clanName == null) return;
+
+		List<String> onlineMembers = getOnlineClanMembers();
+		try {
+			apiClient.sendOnlineCount(onlineMembers, clanName.replace((char)160, ' '), config.pluginPassword());
+		} catch (IOException e) {
+			log.info("Exception!\n" + e);
+		}
 	}
 
 	private String sanitizeMessage(String message)

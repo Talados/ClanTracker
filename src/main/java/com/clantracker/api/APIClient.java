@@ -22,7 +22,7 @@ public class APIClient {
     private static final String apiUrl = "http://127.0.0.1:3000/api/";
     // private static final String apiUrl = "http://osclan.art:3000/api/";
     private static final String ANALYZE = "analyze";
-    private static final String ONLINECOUNT = "onlinecount";
+    private static final String ONLINE_COUNT = "onlinecount";
     private static final String GET_SEQUENCE = "getsequence";
 
     private static OkHttpClient okHttpClient;
@@ -72,6 +72,7 @@ public class APIClient {
 
             JsonObject jsonResponse = new JsonParser().parse(responseString).getAsJsonObject();
             log.info(jsonResponse.get("sequence_number").getAsString());
+            response.close();
             return jsonResponse.get("sequence_number").getAsInt();
         }
     }
@@ -86,13 +87,14 @@ public class APIClient {
         RequestBody body = RequestBody.create(JSON, (gson.toJson(apiRequestBody)));
         Request request = new Request.Builder()
                 .post(body)
-                .url(apiUrl + ONLINECOUNT)
+                .url(apiUrl + ONLINE_COUNT)
                 .build();
         OkHttpClient client = okHttpClient;
         log.info("Sending request");
         Call call = client.newCall(request);
         Response response = call.execute();
         log.info("Sent request");
+        response.close();
     }
 
     public static int message(String clanName, String pluginPassword, int sequenceNumber, int requestType, String author, String content, int retryAttempt, int maxAttempts) throws IOException
@@ -123,6 +125,7 @@ public class APIClient {
             {
                 return message(clanName, pluginPassword, sequenceNumber, requestType, author, content,retryAttempt + 1, maxAttempts);
             }else{
+                response.close();
                 return -1;
             }
         } else {
@@ -132,6 +135,7 @@ public class APIClient {
 
             JsonObject jsonResponse = new JsonParser().parse(responseString).getAsJsonObject();
             log.info(jsonResponse.get("sequence_number").getAsString());
+            response.close();
             return jsonResponse.get("sequence_number").getAsInt();
         }
     }
