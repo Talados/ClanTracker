@@ -1,8 +1,10 @@
 package com.clantracker.api;
 
+import com.clantracker.ClanTrackerPlugin;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import com.google.gson.JsonObject;
@@ -46,7 +48,7 @@ public class APIClient {
                 .build();
     }
 
-    public static int getSequence() throws IOException {
+    public void getSequence(Callback callback) throws IOException {
         Request request = new Request.Builder()
                 .get()
                 .url(apiUrl + GET_SEQUENCE)
@@ -55,29 +57,11 @@ public class APIClient {
         OkHttpClient client = okHttpClient;
         log.info("Sending request");
         Call call = client.newCall(request);
-        Response response = call.execute();
         log.info("Send request");
-
-        if (response.body() == null)
-        {
-            log.debug("API Call - Response was null.");
-            response.close();
-            return -1;
-        }
-        else
-        {
-            log.info("parsing response");
-            String responseString = response.body().string();
-            log.info(responseString);
-
-            JsonObject jsonResponse = new JsonParser().parse(responseString).getAsJsonObject();
-            log.info(jsonResponse.get("sequence_number").getAsString());
-            response.close();
-            return jsonResponse.get("sequence_number").getAsInt();
-        }
+        call.enqueue(callback);
     }
 
-    public static void sendOnlineCount(List<String> onlinePlayersList, String clanName, String pluginPassword) throws IOException
+    public static void sendOnlineCount(List<String> onlinePlayersList, String clanName, String pluginPassword, Callback callback) throws IOException
     {
         int onlineCount = onlinePlayersList.size();
         JsonObject apiRequestBody = new JsonObject();
@@ -92,12 +76,22 @@ public class APIClient {
         OkHttpClient client = okHttpClient;
         log.info("Sending request");
         Call call = client.newCall(request);
-        Response response = call.execute();
-        log.info("Sent request");
-        response.close();
+        call.enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                callback.onFailure(call, e);
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                callback.onResponse(call, response);
+                log.info("Sent request");
+                response.close();
+            }
+        });
     }
 
-    public static int message(String clanName, String pluginPassword, int sequenceNumber, int requestType, String author, String content, int retryAttempt, int maxAttempts) throws IOException
+    public static void message(String clanName, String pluginPassword, int sequenceNumber, int requestType, String author, String content, int retryAttempt, int maxAttempts, Callback callback) throws IOException
     {
         JsonObject apiRequestBody = new JsonObject();
         apiRequestBody.addProperty("clan", clanName);
@@ -115,28 +109,24 @@ public class APIClient {
         OkHttpClient client = okHttpClient;
         log.info("Sending request");
         Call call = client.newCall(request);
-        Response response = call.execute();
-        log.info("Send request");
-
-
-        if (response.body() == null)
-        {
-            if (retryAttempt < maxAttempts)
-            {
-                return message(clanName, pluginPassword, sequenceNumber, requestType, author, content,retryAttempt + 1, maxAttempts);
-            }else{
-                response.close();
-                return -1;
+        call.enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                if (retryAttempt < maxAttempts) {
+                    try {
+                        message(clanName, pluginPassword, sequenceNumber, requestType, author, content, retryAttempt + 1, maxAttempts, callback);
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                } else {
+                    callback.onFailure(call, e);
+                }
             }
-        } else {
-            log.info("parsing response");
-            String responseString = response.body().string();
-            log.info(responseString);
 
-            JsonObject jsonResponse = new JsonParser().parse(responseString).getAsJsonObject();
-            log.info(jsonResponse.get("sequence_number").getAsString());
-            response.close();
-            return jsonResponse.get("sequence_number").getAsInt();
-        }
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                callback.onResponse(call, response);
+            }
+        });
     }
 }
