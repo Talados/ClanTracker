@@ -10,6 +10,8 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.task.Schedule;
+
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,11 +33,11 @@ public class ClanTrackerPlugin extends Plugin
 	@Inject
 	private ClanTrackerConfig config;
 
+	@Inject
+	private APIClient apiClient;
+
 	// Sequence number
 	public int sequenceNumber = 0;
-
-	// APIClient
-	private APIClient c2dApi = new APIClient();
 
 	// Provides our config
 	@Provides
@@ -54,7 +56,7 @@ public class ClanTrackerPlugin extends Plugin
 		log.info("Plugin started");
 
 		try {
-			sequenceNumber = c2dApi.getSequence();
+			sequenceNumber = apiClient.getSequence();
 		} catch (IOException e) {
 			sequenceNumber = -1;
 		}
@@ -122,7 +124,7 @@ public class ClanTrackerPlugin extends Plugin
 			case CLAN_CHAT:
 				clanName = chatMessage.getSender().replace((char)160, ' ');
 				try {
-					setSequenceNumber(c2dApi.message(clanName, config.pluginPassword(), sequenceNumber, 0, author, content, 0, 3));
+					setSequenceNumber(apiClient.message(clanName, config.pluginPassword(), sequenceNumber, 0, author, content, 0, 3));
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
@@ -133,7 +135,7 @@ public class ClanTrackerPlugin extends Plugin
 				SystemMessageType messageType = getSystemMessageType(content);
 				log.info(String.format("[SYSTEM] %s", content));
 				try {
-					setSequenceNumber(c2dApi.message(clanName, config.pluginPassword(), sequenceNumber, messageType.code, author, content, 0, 3));
+					setSequenceNumber(apiClient.message(clanName, config.pluginPassword(), sequenceNumber, messageType.code, author, content, 0, 3));
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
