@@ -202,7 +202,7 @@ public class ClanTrackerPlugin extends Plugin
 
 		switch (chatMessage.getType()) {
 			case CLAN_CHAT:
-				author = chatMessage.getName().replace((char)160, ' ').replaceAll("<img=\\d>", "");
+				author = chatMessage.getName().replace((char)160, ' ').replaceAll("<img=\\d+>", "");
 				content = sanitizeMessage(chatMessage.getMessage());
 				clanName = client.getClanChannel().getName().replace((char)160, ' ');
 
@@ -214,7 +214,7 @@ public class ClanTrackerPlugin extends Plugin
 				log.info(String.format("[%s] %s", author, content));
 				break;
 			case CLAN_MESSAGE:
-				author = chatMessage.getName().replace((char)160, ' ').replaceAll("<img=\\d>", "");
+				author = chatMessage.getName().replace((char)160, ' ').replaceAll("<img=\\d+>", "");
 				content = sanitizeMessage(chatMessage.getMessage());
 				clanName = client.getClanChannel().getName().replace((char)160, ' ');
 
@@ -301,7 +301,7 @@ public class ClanTrackerPlugin extends Plugin
 	private String additionalCustomizations(String message)
 	{
 		String newMessage = message;
-		newMessage = newMessage.replaceAll("\\<img=\\d\\>", "");
+		newMessage = newMessage.replaceAll("\\<img=\\d+\\>", "");
 		return newMessage;
 	}
 }
