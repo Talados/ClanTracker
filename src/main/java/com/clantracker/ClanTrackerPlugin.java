@@ -94,7 +94,7 @@ public class ClanTrackerPlugin extends Plugin
 						log.info(responseString);
 
 						JsonObject jsonResponse = new JsonParser().parse(responseString).getAsJsonObject();
-						log.info(jsonResponse.get("sequence_number").getAsString());
+						log.info("[" + response.code() + "] " + jsonResponse.get("sequence_number").getAsString());
 						response.close();
 
 						setSequenceNumber(jsonResponse.get("sequence_number").getAsInt());
@@ -184,9 +184,13 @@ public class ClanTrackerPlugin extends Plugin
 					log.info(responseString);
 
 					JsonObject jsonResponse = new JsonParser().parse(responseString).getAsJsonObject();
-					log.info(jsonResponse.get("sequence_number").getAsString());
+					int responseSequenceNumber = jsonResponse.get("sequence_number").getAsInt();
+					log.info("[" + response.code() + "] " + responseSequenceNumber);
 					response.close();
-					setSequenceNumber(jsonResponse.get("sequence_number").getAsInt());
+
+					if (response.code() == 403) {
+						setSequenceNumber(responseSequenceNumber);
+					}
 				}
 			}
 		};
@@ -208,10 +212,11 @@ public class ClanTrackerPlugin extends Plugin
 
 				try {
 					apiClient.message(clanName, config.pluginPassword(), sequenceNumber, 0, author, content, 0, 3, getMessageCallback());
+					log.info(String.format("[%s][%s] %s", sequenceNumber, author, content));
+					setSequenceNumber(sequenceNumber + 1);
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
-				log.info(String.format("[%s] %s", author, content));
 				break;
 			case CLAN_MESSAGE:
 				author = chatMessage.getName().replace((char)160, ' ').replaceAll("<img=\\d+>", "");
@@ -219,9 +224,10 @@ public class ClanTrackerPlugin extends Plugin
 				clanName = client.getClanChannel().getName().replace((char)160, ' ');
 
 				SystemMessageType messageType = getSystemMessageType(content);
-				log.info(String.format("[SYSTEM] %s", content));
 				try {
 					apiClient.message(clanName, config.pluginPassword(), sequenceNumber, messageType.code, author, content, 0, 3, getMessageCallback());
+					log.info(String.format("[%s][SYSTEM] %s", sequenceNumber, content));
+					setSequenceNumber(sequenceNumber + 1);
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
