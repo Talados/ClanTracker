@@ -76,7 +76,6 @@ public class ClanTrackerPlugin extends Plugin
 	protected void startUp()
 	{
 		// runs on plugin startup
-		log.info("Plugin started");
 
 		try {
 			Callback callback = new Callback() {
@@ -89,16 +88,12 @@ public class ClanTrackerPlugin extends Plugin
 					}
 					else
 					{
-						log.info("parsing response");
 						String responseString = response.body().string();
-						log.info(responseString);
 
 						JsonObject jsonResponse = new JsonParser().parse(responseString).getAsJsonObject();
-						log.info("[" + response.code() + "] " + jsonResponse.get("sequence_number").getAsString());
 						response.close();
 
 						setSequenceNumber(jsonResponse.get("sequence_number").getAsInt());
-						log.info("Sequence number: " + getSequenceNumber());
 					}
 				}
 
@@ -111,7 +106,6 @@ public class ClanTrackerPlugin extends Plugin
 		} catch (IOException e) {
 			setSequenceNumber(-1);
 		}
-		log.info("[OUT] Sequence number: " + getSequenceNumber());
 
 	}
 
@@ -119,7 +113,6 @@ public class ClanTrackerPlugin extends Plugin
 	protected void shutDown()
 	{
 		// runs on plugin shutdown
-		log.info("Plugin stopped");
 	}
 
 	public enum SystemMessageType {
@@ -179,13 +172,10 @@ public class ClanTrackerPlugin extends Plugin
 					response.close();
 					setSequenceNumber(-1);
 				} else {
-					log.info("parsing response");
 					String responseString = response.body().string();
-					log.info(responseString);
 
 					JsonObject jsonResponse = new JsonParser().parse(responseString).getAsJsonObject();
 					int responseSequenceNumber = jsonResponse.get("sequence_number").getAsInt();
-					log.info("[" + response.code() + "] " + responseSequenceNumber);
 					response.close();
 
 					if (response.code() == 403) {
@@ -212,7 +202,6 @@ public class ClanTrackerPlugin extends Plugin
 
 				try {
 					apiClient.message(clanName, config.pluginPassword(), sequenceNumber, 0, author, content, 0, 3, getMessageCallback());
-					log.info(String.format("[%s][%s] %s", sequenceNumber, author, content));
 					setSequenceNumber(sequenceNumber + 1);
 				} catch (IOException e) {
 					throw new RuntimeException(e);
@@ -226,7 +215,6 @@ public class ClanTrackerPlugin extends Plugin
 				SystemMessageType messageType = getSystemMessageType(content);
 				try {
 					apiClient.message(clanName, config.pluginPassword(), sequenceNumber, messageType.code, author, content, 0, 3, getMessageCallback());
-					log.info(String.format("[%s][SYSTEM] %s", sequenceNumber, content));
 					setSequenceNumber(sequenceNumber + 1);
 				} catch (IOException e) {
 					throw new RuntimeException(e);
@@ -243,9 +231,7 @@ public class ClanTrackerPlugin extends Plugin
 
 		for (int i = 0; i < onlineMembers.size(); i++) {
 			if (client.getClanSettings().titleForRank(onlineMembers.get(i).getRank()).getName().equals("Guest")) {
-				log.info("********* Ignoring " + onlineMembers.get(i).getName());
 			} else {
-				log.info(onlineMembers.get(i).getName());
 				onlineClanMembers.add(onlineMembers.get(i).getName());
 			}
 		}
@@ -266,11 +252,10 @@ public class ClanTrackerPlugin extends Plugin
 		Callback callback = new Callback() {
 			public void onResponse(Call call, Response response)
 					throws IOException {
-				log.info("OnlineCount Status code: " + response.code());
 			}
 
 			public void onFailure(Call call, IOException e) {
-				log.info("Error " + e);
+				log.debug("Error " + e);
 			}
 		};
 		return callback;
@@ -279,7 +264,6 @@ public class ClanTrackerPlugin extends Plugin
 	{
 		if (!loggedIn()) return;
 
-		log.info("Scheduler fired");
 
 		ClanChannel clan = client.getClanChannel();
 		if (clan == null) return;
@@ -291,7 +275,7 @@ public class ClanTrackerPlugin extends Plugin
 		try {
 			apiClient.sendOnlineCount(onlineMembers, clanName.replace((char)160, ' '), config.pluginPassword(), getOnlineCountCallback());
 		} catch (IOException e) {
-			log.info("Exception!\n" + e);
+			log.debug("Exception!\n" + e);
 		}
 	}
 

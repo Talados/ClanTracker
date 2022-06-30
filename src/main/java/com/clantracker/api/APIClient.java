@@ -55,9 +55,7 @@ public class APIClient {
                 .build();
 
         OkHttpClient client = okHttpClient;
-        log.info("Sending request");
         Call call = client.newCall(request);
-        log.info("Send request");
         call.enqueue(callback);
     }
 
@@ -74,7 +72,6 @@ public class APIClient {
                 .url(apiUrl + ONLINE_COUNT)
                 .build();
         OkHttpClient client = okHttpClient;
-        log.info("Sending request");
         Call call = client.newCall(request);
         call.enqueue(new Callback() {
             @Override
@@ -85,7 +82,6 @@ public class APIClient {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 callback.onResponse(call, response);
-                log.info("Sent request");
                 response.close();
             }
         });
@@ -107,7 +103,6 @@ public class APIClient {
                 .url(apiUrl + ANALYZE)
                 .build();
         OkHttpClient client = okHttpClient;
-        log.info("Sending request");
         Call call = client.newCall(request);
         call.enqueue(new Callback() {
             @Override
