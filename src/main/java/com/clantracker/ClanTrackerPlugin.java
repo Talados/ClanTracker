@@ -29,8 +29,7 @@ import java.util.List;
 @Slf4j
 @PluginDescriptor(
 		name = "Clan Tracker",
-		description = "Tracks clan information and drops",
-		enabledByDefault = false
+		description = "Tracks clan information and drops"
 )
 
 public class ClanTrackerPlugin extends Plugin
