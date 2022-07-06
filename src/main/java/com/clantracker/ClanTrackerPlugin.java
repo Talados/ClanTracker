@@ -192,35 +192,37 @@ public class ClanTrackerPlugin extends Plugin
 		String author;
 		String content;
 		String clanName = "";
+		
+		if (!content.contains('</col>')) {
+			switch (chatMessage.getType()) {
+				case CLAN_CHAT:
+					author = chatMessage.getName().replace((char)160, ' ').replaceAll("<img=\\d+>", "");
+					content = sanitizeMessage(chatMessage.getMessage());
+					clanName = client.getClanChannel().getName().replace((char)160, ' ');
 
-		switch (chatMessage.getType()) {
-			case CLAN_CHAT:
-				author = chatMessage.getName().replace((char)160, ' ').replaceAll("<img=\\d+>", "");
-				content = sanitizeMessage(chatMessage.getMessage());
-				clanName = client.getClanChannel().getName().replace((char)160, ' ');
+					try {
+						apiClient.message(clanName, config.pluginPassword(), sequenceNumber, 0, author, content, 0, 3, getMessageCallback());
+						setSequenceNumber(sequenceNumber + 1);
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+					break;
+				case CLAN_MESSAGE:
+					author = chatMessage.getName().replace((char)160, ' ').replaceAll("<img=\\d+>", "");
+					content = sanitizeMessage(chatMessage.getMessage());
+					clanName = client.getClanChannel().getName().replace((char)160, ' ');
 
-				try {
-					apiClient.message(clanName, config.pluginPassword(), sequenceNumber, 0, author, content, 0, 3, getMessageCallback());
-					setSequenceNumber(sequenceNumber + 1);
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
-				break;
-			case CLAN_MESSAGE:
-				author = chatMessage.getName().replace((char)160, ' ').replaceAll("<img=\\d+>", "");
-				content = sanitizeMessage(chatMessage.getMessage());
-				clanName = client.getClanChannel().getName().replace((char)160, ' ');
-
-				SystemMessageType messageType = getSystemMessageType(content);
-				try {
-					apiClient.message(clanName, config.pluginPassword(), sequenceNumber, messageType.code, author, content, 0, 3, getMessageCallback());
-					setSequenceNumber(sequenceNumber + 1);
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
-				break;
-			default:
-				break;
+					SystemMessageType messageType = getSystemMessageType(content);
+					try {
+						apiClient.message(clanName, config.pluginPassword(), sequenceNumber, messageType.code, author, content, 0, 3, getMessageCallback());
+						setSequenceNumber(sequenceNumber + 1);
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+					break;
+				default:
+					break;
+			}
 		}
 	}
 
