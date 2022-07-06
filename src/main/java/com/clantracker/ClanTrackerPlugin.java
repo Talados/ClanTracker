@@ -193,7 +193,7 @@ public class ClanTrackerPlugin extends Plugin
 		String content;
 		String clanName = "";
 		
-		if (!content.contains('</col>')) {
+		if (!content.contains("</col>")) {
 			switch (chatMessage.getType()) {
 				case CLAN_CHAT:
 					author = chatMessage.getName().replace((char)160, ' ').replaceAll("<img=\\d+>", "");
