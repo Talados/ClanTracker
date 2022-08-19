@@ -21,7 +21,8 @@ public class APIClient {
     public static final Gson gson = new Gson();
     private static final MediaType JSON = MediaType.parse("application/json");
 
-    private static final String apiUrl = "http://139.162.135.91:3000/api/";
+    // private static final String apiUrl = "http://139.162.135.91:3000/api/";
+    private static final String apiUrl = "http://127.0.0.1:3000/api/";
     // private static final String apiUrl = "http://osclan.art:3000/api/";
     private static final String ANALYZE = "analyze";
     private static final String ONLINE_COUNT = "onlinecount";
@@ -48,9 +49,12 @@ public class APIClient {
                 .build();
     }
 
-    public void getSequence(Callback callback) throws IOException {
+    public void getSequence(String clanName, Callback callback) throws IOException {
+        JsonObject apiRequestBody = new JsonObject();
+        apiRequestBody.addProperty("clan", clanName);
+        RequestBody body = RequestBody.create(JSON, (gson.toJson(apiRequestBody)));
         Request request = new Request.Builder()
-                .get()
+                .post(body)
                 .url(apiUrl + GET_SEQUENCE)
                 .build();
 

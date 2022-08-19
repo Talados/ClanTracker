@@ -9,7 +9,9 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.clan.ClanChannel;
+import net.runelite.api.clan.ClanID;
 import net.runelite.api.events.ChatMessage;
+import net.runelite.api.events.ClanChannelChanged;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -51,6 +53,9 @@ public class ClanTrackerPlugin extends Plugin
 	// Sequence number
 	public int sequenceNumber = 0;
 
+	// Valid clan
+	public boolean validClan = false;
+
 	// Provides our config
 	@Provides
 	ClanTrackerConfig provideConfig(ConfigManager configManager)
@@ -75,37 +80,7 @@ public class ClanTrackerPlugin extends Plugin
 	protected void startUp()
 	{
 		// runs on plugin startup
-
-		try {
-			Callback callback = new Callback() {
-				public void onResponse(Call call, Response response)
-						throws IOException {
-					if (response.body() == null)
-					{
-						log.debug("API Call - Response was null.");
-						response.close();
-					}
-					else
-					{
-						String responseString = response.body().string();
-
-						JsonObject jsonResponse = new JsonParser().parse(responseString).getAsJsonObject();
-						response.close();
-
-						setSequenceNumber(jsonResponse.get("sequence_number").getAsInt());
-					}
-				}
-
-				public void onFailure(Call call, IOException e) {
-					setSequenceNumber(-1);
-				}
-			};
-			apiClient.getSequence(callback);
-
-		} catch (IOException e) {
-			setSequenceNumber(-1);
-		}
-
+		setSequenceNumber(-1);
 	}
 
 	@Override
@@ -187,8 +162,60 @@ public class ClanTrackerPlugin extends Plugin
 	}
 
 	@Subscribe
+	private void onClanChannelChanged(ClanChannelChanged event)
+	{
+		if (event.getClanId() == ClanID.CLAN)
+		{
+			ClanChannel clan = client.getClanChannel();
+			if (clan == null) return;
+
+			String clanName = client.getClanChannel().getName();
+			if (clanName == null) return;
+
+			clanName = clanName.replace((char)160, ' ');
+
+			try {
+				Callback callback = new Callback() {
+					public void onResponse(Call call, Response response)
+							throws IOException {
+						if (response.body() == null)
+						{
+							log.debug("API Call - Response was null.");
+							response.close();
+						}
+						else
+						{
+							if (response.code() == 200)
+							{
+								validClan = true;
+								String responseString = response.body().string();
+
+								JsonObject jsonResponse = new JsonParser().parse(responseString).getAsJsonObject();
+								response.close();
+
+								setSequenceNumber(jsonResponse.get("sequence_number").getAsInt());
+							} else {
+								validClan = false;
+							}
+						}
+					}
+
+					public void onFailure(Call call, IOException e) {
+						setSequenceNumber(-1);
+					}
+				};
+				apiClient.getSequence(clanName, callback);
+
+			} catch (IOException e) {
+				setSequenceNumber(-1);
+			}
+		}
+	}
+	@Subscribe
 	private void onChatMessage(ChatMessage chatMessage)
 	{
+		if (!validClan) return;
+
 		String author;
 		String content;
 		String clanName = "";
