@@ -1,5 +1,6 @@
 package com.clantracker.api;
 
+import com.clantracker.ClanTrackerConfig;
 import com.clantracker.ClanTrackerPlugin;
 import com.google.gson.Gson;
 import java.io.IOException;
@@ -9,7 +10,9 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.client.config.ConfigManager;
 import net.runelite.http.api.RuneLiteAPI;
 import okhttp3.*;
 
@@ -18,14 +21,21 @@ import javax.inject.Inject;
 @Slf4j
 public class APIClient {
 
+    // Injects our config
+    @Inject
+    private ClanTrackerConfig config;
+    // Provides our config
+    @Provides
+    ClanTrackerConfig provideConfig(ConfigManager configManager)
+    {
+        return configManager.getConfig(ClanTrackerConfig.class);
+    }
     public static final Gson gson = new Gson();
     private static final MediaType JSON = MediaType.parse("application/json");
-
-    private static final String apiUrl = "http://139.162.135.91:3000/api/";
-    //private static final String apiUrl = "http://127.0.0.1:3000/api/";
     private static final String ANALYZE = "analyze";
     private static final String ONLINE_COUNT = "onlinecount";
     private static final String GET_SEQUENCE = "getsequence";
+
 
     private static OkHttpClient okHttpClient;
 
@@ -49,12 +59,13 @@ public class APIClient {
     }
 
     public void getSequence(String clanName, Callback callback) throws IOException {
+        if(config.apiUrl() == null) return;
         JsonObject apiRequestBody = new JsonObject();
         apiRequestBody.addProperty("clan", clanName);
         RequestBody body = RequestBody.create(JSON, (gson.toJson(apiRequestBody)));
         Request request = new Request.Builder()
                 .post(body)
-                .url(apiUrl + GET_SEQUENCE)
+                .url(config.apiUrl() + GET_SEQUENCE)
                 .build();
 
         OkHttpClient client = okHttpClient;
@@ -62,8 +73,9 @@ public class APIClient {
         call.enqueue(callback);
     }
 
-    public static void sendOnlineCount(List<String> onlinePlayersList, String clanName, String pluginPassword, Callback callback) throws IOException
+    public void sendOnlineCount(List<String> onlinePlayersList, String clanName, String pluginPassword, Callback callback) throws IOException
     {
+        if(config.apiUrl() == null) return;
         int onlineCount = onlinePlayersList.size();
         JsonObject apiRequestBody = new JsonObject();
         apiRequestBody.addProperty("clan", clanName);
@@ -72,7 +84,7 @@ public class APIClient {
         RequestBody body = RequestBody.create(JSON, (gson.toJson(apiRequestBody)));
         Request request = new Request.Builder()
                 .post(body)
-                .url(apiUrl + ONLINE_COUNT)
+                .url(config.apiUrl() + ONLINE_COUNT)
                 .build();
         OkHttpClient client = okHttpClient;
         Call call = client.newCall(request);
@@ -90,8 +102,9 @@ public class APIClient {
         });
     }
 
-    public static void message(String clanName, String pluginPassword, int sequenceNumber, int requestType, String author, String content, int retryAttempt, int maxAttempts, Callback callback) throws IOException
+    public void message(String clanName, String pluginPassword, int sequenceNumber, int requestType, String author, String content, int retryAttempt, int maxAttempts, Callback callback) throws IOException
     {
+        if(config.apiUrl() == null) return;
         JsonObject apiRequestBody = new JsonObject();
         apiRequestBody.addProperty("clan", clanName);
         apiRequestBody.addProperty("cpw", pluginPassword);
@@ -103,7 +116,7 @@ public class APIClient {
         RequestBody body = RequestBody.create(JSON, (gson.toJson(apiRequestBody)));
         Request request = new Request.Builder()
                 .post(body)
-                .url(apiUrl + ANALYZE)
+                .url(config.apiUrl() + ANALYZE)
                 .build();
         OkHttpClient client = okHttpClient;
         Call call = client.newCall(request);
