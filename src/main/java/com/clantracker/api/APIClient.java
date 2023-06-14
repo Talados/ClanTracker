@@ -12,6 +12,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Client;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.http.api.RuneLiteAPI;
 import okhttp3.*;
@@ -30,7 +31,10 @@ public class APIClient {
     {
         return configManager.getConfig(ClanTrackerConfig.class);
     }
-    public static final Gson gson = new Gson();
+
+    @Inject
+    private Gson gson;
+
     private static final MediaType JSON = MediaType.parse("application/json");
     private static final String ANALYZE = "analyze";
     private static final String ONLINE_COUNT = "onlinecount";
