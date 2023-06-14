@@ -10,7 +10,7 @@ repositories {
 	mavenCentral()
 }
 
-def runeLiteVersion = '1.8.31-SNAPSHOT'
+def runeLiteVersion = '1.10.6-SNAPSHOT'
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
@@ -25,7 +25,7 @@ dependencies {
 
 group = 'com.clantracker'
 version = '1.2-SNAPSHOT'
-sourceCompatibility = '1.8'
+sourceCompatibility = '1.10'
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'

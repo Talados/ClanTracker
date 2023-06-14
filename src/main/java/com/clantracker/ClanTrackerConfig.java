@@ -18,4 +18,16 @@ public interface ClanTrackerConfig extends Config
 	{
 		return "";
 	}
+
+	@ConfigItem(
+			keyName = "apiUrl",
+			name = "API Url",
+			description = "URL of clan tracker API",
+			position = 1
+	)
+	default String apiUrl()
+	{
+		return "";
+	}
+
 }
